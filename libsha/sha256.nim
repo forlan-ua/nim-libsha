@@ -1,5 +1,7 @@
 import lib
 
+const BIT = 32
+
 const SHA256_CONST = [
    0x428A2F98'u32, 0x71374491'u32, 0xB5C0FBCF'u32, 0xE9B5DBA5'u32, 0x3956C25B'u32, 0x59F111F1'u32, 0x923F82A4'u32, 0xAB1C5ED5'u32,
    0xD807AA98'u32, 0x12835B01'u32, 0x243185BE'u32, 0x550C7DC3'u32, 0x72BE5D74'u32, 0x80DEB1FE'u32, 0x9BDC06A7'u32, 0xC19BF174'u32,
@@ -13,8 +15,9 @@ const SHA256_CONST = [
 
 type Sha256* = ref object
     values*: array[8, uint32]
-    len: uint64
-    tail: array[64, byte]
+    len1: uint32
+    len2: uint32
+    tail: array[64, uint32]
     finished: bool
 
 proc newSha256*(): Sha256 =
@@ -26,19 +29,19 @@ proc newSha256*(): Sha256 =
     )
 
 proc calculate(sha: Sha256) =
-    var w: array[64, uint32]
-    for i in 0 ..< 16:
-        let k = i * 4
-        w[i] = (sha.tail[k].uint32 shl 24) or (sha.tail[k + 1].uint32 shl 16) or (sha.tail[k + 2].uint32 shl 8) or sha.tail[k + 3].uint32
+    var w = sha.tail
 
-    for i in 16 ..< 64:
+    var i = 16
+    while i < 64:
         let s0 = rotr(w[i-15], 7) xor rotr(w[i-15], 18) xor (w[i-15] shr 3)
         let s1 = rotr(w[i-2], 17) xor rotr(w[i-2], 19) xor (w[i-2] shr 10)
         w[i] = w[i-16] + s0 + w[i-7] + s1
+        i.inc
     
     var h = sha.values
+    i = 0
 
-    for i in 0 ..< 64:
+    while i < 64:
         let S0 = rotr(h[0], 2) xor rotr(h[0], 13) xor rotr(h[0], 22)
         let ch = (h[0] and h[1]) xor (h[0] and h[2]) xor (h[1] and h[2])
         let tmp2 = S0 + ch
@@ -55,23 +58,19 @@ proc calculate(sha: Sha256) =
         h[1] = h[0]
         h[0] = tmp1 + tmp2
 
-    for i in 0 .. h.high:
-        sha.values[i] += h[i]
+        i.inc
+
+    calcValues(8)
 
 proc add*(sha: Sha256, s: string | openarray[byte]): Sha256 {.discardable.} =
     assert(sha.finished == false, "SHA2 has been already finished")
-    result = sha
-
-    add32
+    addImpl
 
 proc finish*(sha: Sha256) =
-    finish32
+    finishImpl
 
 proc hexdigest*(sha: Sha256): string =
-    sha.finish()
-    result = newString(64)
-    for i in 0 ..< 8:
-        toHex32
+    toHex(32, 32)
 
 template sha256hexdigest*(s: string): string =
     newSha256().add(s).hexdigest()

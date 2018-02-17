@@ -6,6 +6,9 @@ type Sha512M224* = ref object
 proc values*(sha: Sha512M224): array[8, uint64] =
     sha.sha512.values
 
+proc finish*(sha: Sha512M224) =
+    sha.sha512.finish()
+
 proc newSha512M224*(): Sha512M224 =
     result = Sha512M224(
         sha512: newSha512()
@@ -19,11 +22,7 @@ proc add*(sha: Sha512M224, s: string | openarray[byte]): Sha512M224 {.discardabl
     sha.sha512.add(s)
 
 proc hexdigest*(sha: Sha512M224): string =
-    sha.sha512.finish()
-    result = newString(64)
-    for i in 0 ..< 4:
-        toHex64
-    result.setLen(56)
+    toHex(64, 28)
 
 template sha512M224hexdigest*(s: string): string =
     newSha512M224().add(s).hexdigest()

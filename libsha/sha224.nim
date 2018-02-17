@@ -1,10 +1,15 @@
 import lib, sha256
 
+const BIT = 32
+
 type Sha224 = ref object
     sha256: Sha256
 
 proc values*(sha: Sha224): array[8, uint32] =
     sha.sha256.values
+
+proc finish*(sha: Sha224) =
+    sha.sha256.finish()
 
 proc newSha224*(): Sha224 =
     result = Sha224(
@@ -18,10 +23,7 @@ proc add*(sha: Sha224, s: string | openarray[byte]): Sha224 {.discardable.} =
     sha.sha256.add(s)
 
 proc hexdigest*(sha: Sha224): string =
-    sha.sha256.finish()
-    result = newString(56)
-    for i in 0 ..< 7:
-        toHex32
+    toHex(32, 28)
 
 template sha224hexdigest*(s: string): string =
     newSha224().add(s).hexdigest()

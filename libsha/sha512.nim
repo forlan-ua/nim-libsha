@@ -1,5 +1,7 @@
 import lib
 
+const BIT = 64
+
 const SHA512_CONST = [
     0x428a2f98d728ae22'u64, 0x7137449123ef65cd'u64, 0xb5c0fbcfec4d3b2f'u64, 0xe9b5dba58189dbbc'u64, 0x3956c25bf348b538'u64, 
     0x59f111f1b605d019'u64, 0x923f82a4af194f9b'u64, 0xab1c5ed5da6d8118'u64, 0xd807aa98a3030242'u64, 0x12835b0145706fbe'u64, 
@@ -21,8 +23,9 @@ const SHA512_CONST = [
 
 type Sha512* = ref object
     values*: array[8, uint64]
-    len: uint64
-    tail: array[128, byte]
+    len1: uint64
+    len2: uint64
+    tail: array[80, uint64]
     finished: bool
 
 proc newSha512*(): Sha512 =
@@ -34,19 +37,19 @@ proc newSha512*(): Sha512 =
     )
 
 proc calculate(sha: Sha512) =
-    var w: array[80, uint64]
-    for i in 0 ..< 16:
-        let k = i * 8
-        w[i] = (sha.tail[k].uint64 shl 56) or (sha.tail[k + 1].uint64 shl 48) or (sha.tail[k + 2].uint64 shl 40) or (sha.tail[k + 3].uint64 shl 32) or (sha.tail[k + 4].uint64 shl 24) or (sha.tail[k + 5].uint64 shl 16) or (sha.tail[k + 6].uint64 shl 8) or sha.tail[k + 7].uint64
+    var w = sha.tail
 
-    for i in 16 ..< 80:
+    var i = 16
+    while i < 80:
         let s0 = rotr(w[i-15], 1) xor rotr(w[i-15], 8) xor (w[i-15] shr 7)
         let s1 = rotr(w[i-2], 19) xor rotr(w[i-2], 61) xor (w[i-2] shr 6)
         w[i] = w[i-16] + s0 + w[i-7] + s1
+        i.inc
 
     var h = sha.values
-
-    for i in 0 ..< 80:
+    i = 0
+    
+    while i < 80:
         let S0 = rotr(h[0], 28) xor rotr(h[0], 34) xor rotr(h[0], 39)
         let ch = (h[0] and h[1]) xor (h[0] and h[2]) xor (h[1] and h[2])
         let tmp2 = S0 + ch
@@ -63,64 +66,19 @@ proc calculate(sha: Sha512) =
         h[1] = h[0]
         h[0] = tmp1 + tmp2
 
-    for i in 0 .. h.high:
-        sha.values[i] += h[i]
+        i.inc
+
+    calcValues(8)
 
 proc add*(sha: Sha512, s: string | openarray[byte]): Sha512 {.discardable.} =
     assert(sha.finished == false, "SHA2 has been already finished")
-    result = sha
-
-    var tailEnd = (sha.len mod 1024) div 8
-    if tailEnd + s.len.uint64 < 128:
-        for i in 0 ..< s.len:
-            sha.tail[tailEnd + i.uint64] = s[i].byte
-        sha.len += s.len.uint64 * 8
-        return
-
-    for i in 0 ..< s.len:
-        sha.tail[tailEnd] = s[i].byte
-        tailEnd = (tailEnd + 1) mod 128
-        if tailEnd == 0:
-            sha.calculate()
-    sha.len += s.len.uint64 * 8
+    addImpl
 
 proc finish*(sha: Sha512) =
-    if sha.finished:
-        return
-    sha.finished = true
-
-    let tailEndBit = sha.len mod 1024
-    var tailEnd = tailEndBit div 8
-    
-    sha.tail[tailEnd] = 0b10000000
-    tailEnd.inc
-
-    if tailEndBit >= (1024 - 128).uint64:
-        for i in tailEnd ..< 128:
-            sha.tail[i] = 0b0
-        sha.calculate()
-        tailEnd = 0
-
-    for i in tailEnd ..< (128 - 16):
-        sha.tail[i] = 0b0
-    tailEnd = 128 - 16
-    
-    # TODO: Add compatibility with 128 bit length
-    for i in tailEnd ..< tailEnd + 8:
-        sha.tail[i] = 0
-        tailEnd.inc
-
-    for i in 0 ..< 8:
-        sha.tail[tailEnd] = (sha.len shr ((7 - i) * 8)).toByte()
-        tailEnd.inc
-
-    sha.calculate()
+    finishImpl
 
 proc hexdigest*(sha: Sha512): string =
-    sha.finish()
-    result = newString(128)
-    for i in 0 ..< 8:
-        toHex64
+    toHex(64, 64)
 
 template sha512hexdigest*(s: string): string =
     newSha512().add(s).hexdigest()

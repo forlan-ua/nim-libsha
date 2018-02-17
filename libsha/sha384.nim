@@ -6,6 +6,9 @@ type Sha384* = ref object
 proc values*(sha: Sha384): array[8, uint64] =
     sha.sha512.values
 
+proc finish*(sha: Sha384) =
+    sha.sha512.finish()
+
 proc newSha384*(): Sha384 =
     result = Sha384(
         sha512: newSha512()
@@ -19,10 +22,7 @@ proc add*(sha: Sha384, s: string | openarray[byte]): Sha384 {.discardable.} =
     sha.sha512.add(s)
 
 proc hexdigest*(sha: Sha384): string =
-    sha.sha512.finish()
-    result = newString(96)
-    for i in 0 ..< 6:
-        toHex64
+    toHex(64, 48)
 
 template sha384hexdigest*(s: string): string =
     newSha384().add(s).hexdigest()
