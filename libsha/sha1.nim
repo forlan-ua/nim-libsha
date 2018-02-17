@@ -59,10 +59,10 @@ proc calculate(sha: Sha1) =
 
 proc add*(sha: Sha1, s: string | openarray[byte]): Sha1 =
     assert(sha.finished == false, "SHA1 has been already finished")
-    addImpl32
+    addImpl
 
 proc finish*(sha: Sha1) =
-    finishImpl32
+    finishImpl
 
 proc hexdigest*(sha: Sha1): string =
     toHex(32, 20)

@@ -73,43 +73,7 @@ template finishImpl* =
             sha.tail[tailCur] = 0
             tailCur.inc
         sha.calculate()
-
         tailCur = 0
-        tailPos = 0
-
-    while tailCur < 14:
-        sha.tail[tailCur] = 0
-        tailCur.inc
-
-    sha.tail[14] = sha.len2
-    sha.tail[15] = sha.len1
-    
-    sha.calculate()
-
-template finishImpl32* =
-    if sha.finished:
-        return
-    sha.finished = true
-
-    const m = 32 * 16
-
-    let tailBit = (sha.len1 mod m).int
-    var tailCur = tailBit div 32
-    var tailPos = tailBit mod 32
-    
-    sha.tail[tailCur] = (sha.tail[tailCur] shl 1) or 0b1
-    tailPos.inc
-    sha.tail[tailCur] = sha.tail[tailCur] shl (32 - tailPos)
-    tailCur.inc
-
-    if tailBit >= (m - (32 * 2)):
-        while tailCur < 16:
-            sha.tail[tailCur] = 0
-            tailCur.inc
-        sha.calculate()
-
-        tailCur = 0
-        tailPos = 0
 
     while tailCur < 14:
         sha.tail[tailCur] = 0
@@ -132,28 +96,6 @@ template addImpl* =
         sha.tail[tailCur] = (sha.tail[tailCur] shl 8) or s[i].byte
         tailPos += 8
         if tailPos == BIT:
-            tailPos = 0
-            tailCur.inc
-            if tailCur == 16:
-                tailCur = 0
-                sha.calculate()
-        sha.len1.inc(8)
-        if sha.len1 == 0:
-            sha.len2.inc
-        i.inc
-
-template addImpl32* =
-    result = sha
-
-    let tailBit = (sha.len1 mod (32.uint64 * 16)).int
-    var tailCur = tailBit div 32
-    var tailPos = tailBit mod 32
-
-    var i = 0
-    while i < s.len:
-        sha.tail[tailCur] = (sha.tail[tailCur] shl 8) or s[i].byte
-        tailPos += 8
-        if tailPos == 32:
             tailPos = 0
             tailCur.inc
             if tailCur == 16:
