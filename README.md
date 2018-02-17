@@ -1,4 +1,4 @@
-libsha - SHA1 and SHA2 algorithms implementation
+libsha - SHA1 and SHA2 implementation
 ======
 
 ## Information
@@ -17,11 +17,22 @@ nimble install https://github.com/forlan-ua/nim-libsha
 ### Repo
 ```
 git clone https://github.com/forlan-ua/nim-libsha
-cd nim-libsh 
+cd nim-libsh
 nimble install
-# Tests
-# nim c --run libsha.nim
 ```
+
+You can use `nimble develop` instead of `nimble install`
+
+### Tests
+
+Clone the repo then:
+```
+nimble install nake
+cd tests
+nake
+```
+
+Look into [nakefile.nim](https://github.com/forlan-ua/nim-libsha/blob/master/tests/nakefile.nim) for more tests
 
 ## Algorithms
 
