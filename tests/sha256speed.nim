@@ -7,9 +7,10 @@ let message = "The quick brown fox jumps over the lazy dog"
 let sha256Inst = newSha256().add(message)
 assert(sha256Inst.hexdigest().insertSep(' ', 8) == "D7A8FBB3 07D78094 69CA9ABC B0082E4F 8D5651E4 6D3CDB76 2D02D0BF 37C9E592")
 
+
 echo " "
 echo "Sha256 implementation vs jangko/nimSHA2. Sum - total time, Avg - avarage time"
-echo "10 tests, 100 probs, 10000 calculations"
+echo "10 tests, 100 probs, 100000 calculations"
 echo " "
 
 proc test() {.gcsafe.} =
@@ -22,8 +23,8 @@ proc test() {.gcsafe.} =
     
     for i in 0 ..< 100:
         let s1 = epochTime()
-        for i in 0 ..< 10000:
-            discard computeSHA256(message).toHex()
+        for i in 0 ..< 100000:
+            discard computeSHA256(message)
         let d1 = epochTime() - s1
         sum1 += d1
         if avg1 == 0.0:
@@ -32,7 +33,7 @@ proc test() {.gcsafe.} =
             avg1 = (avg1 + d1) / 2
 
         let s2 = epochTime()
-        for i in 0 ..< 10000:
+        for i in 0 ..< 100000:
             discard sha256hexdigest(message)
         let d2 = epochTime() - s2
         sum2 += d2

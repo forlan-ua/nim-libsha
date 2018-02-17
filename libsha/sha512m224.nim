@@ -22,6 +22,8 @@ proc add*(sha: Sha512M224, s: string | openarray[byte]): Sha512M224 {.discardabl
     sha.sha512.add(s)
 
 proc hexdigest*(sha: Sha512M224): string =
+    sha.finish()
+    let h = sha.sha512.values
     toHex(64, 28)
 
 template sha512M224hexdigest*(s: string): string =

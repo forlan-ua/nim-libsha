@@ -9,7 +9,7 @@ assert(sha512Inst.hexdigest().insertSep(' ', 8) == "07E547D9 586F6A73 F73FBAC0 4
 
 echo " "
 echo "Sha512 implementation vs jangko/nimSHA2. Sum - total time, Avg - avarage time"
-echo "10 tests, 100 probs, 10000 calculations"
+echo "10 tests, 100 probs, 100000 calculations"
 echo " "
 
 proc test() {.gcsafe.} =
@@ -22,8 +22,8 @@ proc test() {.gcsafe.} =
     
     for i in 0 ..< 100:
         let s1 = epochTime()
-        for i in 0 ..< 10000:
-            discard computeSHA512(message).toHex()
+        for i in 0 ..< 100000:
+            discard computeSHA512(message)
         let d1 = epochTime() - s1
         sum1 += d1
         if avg1 == 0.0:
@@ -32,7 +32,7 @@ proc test() {.gcsafe.} =
             avg1 = (avg1 + d1) / 2
 
         let s2 = epochTime()
-        for i in 0 ..< 10000:
+        for i in 0 ..< 100000:
             discard sha512hexdigest(message)
         let d2 = epochTime() - s2
         sum2 += d2
