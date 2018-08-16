@@ -12,7 +12,7 @@ template rotr*(x: uint64, y: int): uint64 =
 template toByte*(x: SomeInteger): byte =
     (x and 0b11111111).byte
 
-const DIGEST* = "0123456789abcdef"
+const DIGEST* = "0123456789ABCDEF"
 template toHexTpl*(i, k, sh: int) =
     result[i] = DIGEST[(h[k] shr sh).int and 0xF]
 
