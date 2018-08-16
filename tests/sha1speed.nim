@@ -4,12 +4,12 @@ import shaa1
 
 let message = "The quick brown fox jumps over the lazy dog"
 
-assert(newSha1().add(message).hexdigest().insertSep(' ', 8) == "2FD4E1C6 7A2D28FC ED849EE1 BB76E739 1B93EB12")
-assert(sha1hexdigest(message).insertSep(' ', 8) == "2FD4E1C6 7A2D28FC ED849EE1 BB76E739 1B93EB12")
+let sha1Inst = newSha1().add(message)
+assert(sha1Inst.hexdigest().insertSep(' ', 8) == "2FD4E1C6 7A2D28FC ED849EE1 BB76E739 1B93EB12")
 
 echo " "
 echo "Sha1 implementation vs onionhammer/sha1. Sum - total time, Avg - avarage time"
-echo "10 tests, 100 probs, 1000000 calculations"
+echo "10 tests, 100 probs, 50000 calculations"
 echo " "
 
 proc test() {.gcsafe.} =
@@ -22,7 +22,7 @@ proc test() {.gcsafe.} =
     
     for i in 0 ..< 100:
         let s1 = epochTime()
-        for i in 0 ..< 1000000:
+        for i in 0 ..< 50000:
             discard shaa1.compute(message).toHex()
         let d1 = epochTime() - s1
         sum1 += d1
@@ -32,9 +32,8 @@ proc test() {.gcsafe.} =
             avg1 = (avg1 + d1) / 2
 
         let s2 = epochTime()
-        for i in 0 ..< 1000000:
+        for i in 0 ..< 50000:
             discard sha1hexdigest(message)
-            # discard newSha1().add(message).hexdigest()
         let d2 = epochTime() - s2
         sum2 += d2
         if avg2 == 0.0:

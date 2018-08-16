@@ -21,11 +21,6 @@ const SHA512_CONST = [
     0x431d67c49c100d4c'u64, 0x4cc5d4becb3e42b6'u64, 0x597f299cfc657e2a'u64, 0x5fcb6fab3ad6faec'u64, 0x6c44198c4a475817'u64
 ]
 
-const SHA512_DEFAULTS = [
-    0x6a09e667f3bcc908'u64, 0xbb67ae8584caa73b'u64, 0x3c6ef372fe94f82b'u64, 0xa54ff53a5f1d36f1'u64, 
-    0x510e527fade682d1'u64, 0x9b05688c2b3e6c1f'u64, 0x1f83d9abfb41bd6b'u64, 0x5be0cd19137e2179'u64
-]
-
 type Sha512* = ref object
     values*: array[8, uint64]
     len1: uint64
@@ -34,17 +29,26 @@ type Sha512* = ref object
     finished: bool
 
 proc newSha512*(): Sha512 =
-    Sha512(values: SHA512_DEFAULTS)
+    Sha512(
+        values: [
+            0x6a09e667f3bcc908'u64, 0xbb67ae8584caa73b'u64, 0x3c6ef372fe94f82b'u64, 0xa54ff53a5f1d36f1'u64, 
+            0x510e527fade682d1'u64, 0x9b05688c2b3e6c1f'u64, 0x1f83d9abfb41bd6b'u64, 0x5be0cd19137e2179'u64
+        ]
+    )
 
-template calculateImpl =
+proc calculate(sha: Sha512) =
+    var w = sha.tail
+
     var i = 16
     while i < 80:
         let s0 = rotr(w[i-15], 1) xor rotr(w[i-15], 8) xor (w[i-15] shr 7)
         let s1 = rotr(w[i-2], 19) xor rotr(w[i-2], 61) xor (w[i-2] shr 6)
         w[i] = w[i-16] + s0 + w[i-7] + s1
         i.inc
-        
+
+    var h = sha.values
     i = 0
+    
     while i < 80:
         let S0 = rotr(h[0], 28) xor rotr(h[0], 34) xor rotr(h[0], 39)
         let ch = (h[0] and h[1]) xor (h[0] and h[2]) xor (h[1] and h[2])
@@ -64,13 +68,7 @@ template calculateImpl =
 
         i.inc
 
-proc calculate(sha: Sha512) =
-    var w = sha.tail
-    var h = sha.values
-
-    calculateImpl
-
-    sha.values = h
+    calcValues(8)
 
 proc add*(sha: Sha512, s: string | openarray[byte]): Sha512 {.discardable.} =
     assert(sha.finished == false, "SHA2 has been already finished")
@@ -80,17 +78,7 @@ proc finish*(sha: Sha512) =
     finishImpl
 
 proc hexdigest*(sha: Sha512): string =
-    sha.finish()
-    let h = sha.values
     toHex(64, 64)
 
-proc sha512hexdigest*(s: string): string =
-    var h = SHA512_DEFAULTS
-    var w: array[80, uint64]
-
-    inlineImpl
-    
-    w[15] = s.len.uint64
-    calculateImpl
-
-    toHex(64, 64)
+template sha512hexdigest*(s: string): string =
+    newSha512().add(s).hexdigest()

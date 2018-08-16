@@ -14,7 +14,7 @@ template toByte*(x: SomeInteger): byte =
 
 const DIGEST* = "0123456789ABCDEF"
 template toHexTpl*(i, k, sh: int) =
-    result[i] = DIGEST[(h[k] shr sh).int and 0xF]
+    result[i] = DIGEST[(sha.values[k] shr sh).int and 0xF]
 
 proc toHexImpl(x: NimNode, y: NimNode): NimNode =
     let len = newIntLitNode(y.intVal * 2)
@@ -22,6 +22,12 @@ proc toHexImpl(x: NimNode, y: NimNode): NimNode =
     let res = nnkStmtList.newTree()
 
     res.add(
+        nnkCall.newTree(
+            nnkDotExpr.newTree(
+                ident("sha"),
+                ident("finish")
+            )
+        ),
         nnkAsgn.newTree(
             ident("result"),
             nnkCall.newTree(
@@ -46,28 +52,6 @@ proc toHexImpl(x: NimNode, y: NimNode): NimNode =
 macro toHex*(x: untyped, y: untyped): untyped =
     result = toHexImpl(x, y)
 
-template addImpl* =
-    result = sha
-
-    let tailBit = (sha.len1 mod (BIT.uint64 * 16)).int
-    var tailCur = tailBit div BIT
-    var tailPos = tailBit mod BIT
-
-    var i = 0
-    while i < s.len:
-        sha.tail[tailCur] = (sha.tail[tailCur] shl 8) or s[i].byte
-        tailPos.inc(8)
-        if tailPos == BIT:
-            tailPos = 0
-            tailCur.inc
-            if tailCur == 15:
-                tailCur = 0
-                sha.calculate()
-        sha.len1.inc(8)
-        if sha.len1 == 0:
-            sha.len2.inc
-        i.inc
-        
 template finishImpl* =
     if sha.finished:
         return
@@ -79,7 +63,9 @@ template finishImpl* =
     var tailCur = tailBit div BIT
     var tailPos = tailBit mod BIT
     
-    sha.tail[tailCur] = ((sha.tail[tailCur] shl 1) or 0b1) shl (BIT - tailPos - 1)
+    sha.tail[tailCur] = (sha.tail[tailCur] shl 1) or 0b1
+    tailPos.inc
+    sha.tail[tailCur] = sha.tail[tailCur] shl (BIT - tailPos)
     tailCur.inc
 
     if tailBit >= (m - (BIT * 2)):
@@ -98,30 +84,41 @@ template finishImpl* =
     
     sha.calculate()
 
-template inlineImpl* =
-    var strInd = 0
-    var wInd = 0
-    var binInd = 0
-    
-    while strInd < s.len:
-        w[wInd] = (w[wInd] shl 8) or s[strInd].byte
-        binInd.inc(8)
-        if binInd == BIT:
-            binInd = 0
-            wInd.inc
-            if wInd == 15:
-                wInd = 0
-                calculateImpl
-        strInd.inc
-    
-    w[wInd] = ((w[wInd] shl 1) or 0b1) shl (BIT - binInd - 1)
-    wInd.inc
+template addImpl* =
+    result = sha
 
-    if wInd > 14:
-        w[15] = 0
-        calculateImpl
-        wInd = 0
- 
-    while wInd < 15:
-        w[wInd] = 0
-        wInd.inc
+    let tailBit = (sha.len1 mod (BIT.uint64 * 16)).int
+    var tailCur = tailBit div BIT
+    var tailPos = tailBit mod BIT
+
+    var i = 0
+    while i < s.len:
+        sha.tail[tailCur] = (sha.tail[tailCur] shl 8) or s[i].byte
+        tailPos += 8
+        if tailPos == BIT:
+            tailPos = 0
+            tailCur.inc
+            if tailCur == 16:
+                tailCur = 0
+                sha.calculate()
+        sha.len1.inc(8)
+        if sha.len1 == 0:
+            sha.len2.inc
+        i.inc
+
+template hToValues*(i: int) =
+    sha.values[i] += h[i]
+
+proc calcValuesImpl(x: NimNode): NimNode =
+    var res = nnkStmtList.newTree()
+    for i in 0 ..< x.intVal:
+        res.add(
+            nnkCall.newTree(
+                ident("hToValues"),
+                newIntLitNode(i)
+            )
+        )
+    result = res
+
+macro calcValues*(x: untyped): untyped =
+    result = calcValuesImpl(x)
