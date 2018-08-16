@@ -12,7 +12,7 @@ template rotr*(x: uint64, y: int): uint64 =
 template toByte*(x: SomeInteger): byte =
     (x and 0b11111111).byte
 
-const DIGEST* = "0123456789ABCDEF"
+const DIGEST* = "0123456789abcdef"
 template toHexTpl*(i, k, sh: int) =
     result[i] = DIGEST[(sha.values[k] shr sh).int and 0xF]
 
@@ -87,7 +87,7 @@ template finishImpl* =
 template addImpl* =
     result = sha
 
-    let tailBit = (sha.len1 mod (BIT.uint64 * 16)).int
+    let tailBit = (sha.len1 mod (BIT.uint32 * 16)).int
     var tailCur = tailBit div BIT
     var tailPos = tailBit mod BIT
 
