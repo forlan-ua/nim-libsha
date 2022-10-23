@@ -14,7 +14,7 @@ template toByte*(x: SomeInteger): byte =
 
 const DIGEST* = "0123456789abcdef"
 template toHexTpl*(i, k, sh: int) =
-    result[i] = DIGEST[(sha.values[k] shr sh).int and 0xF]
+    result[i] = DIGEST[(sha.values[k] shr sh).uint64 and 0xF]
 
 proc toHexImpl(x: NimNode, y: NimNode): NimNode =
     let len = newIntLitNode(y.intVal * 2)

@@ -170,7 +170,7 @@ template computeInternal(src: untyped): untyped =
 
   # Store hash in result pointer, and make sure we get in in the correct order on both endian models.
   for i in 0 .. sha_digest_size-1:
-    result[i] = uint8((int(state[i shr 2]) shr ((3-(i and 3)) * 8)) and 255)
+    result[i] = uint8((uint32(state[i shr 2]) shr ((3-(i and 3)) * 8)) and 255)
 
 proc compute*(src: string) : SHA1Digest =
   ## Calculate SHA1 from input string
